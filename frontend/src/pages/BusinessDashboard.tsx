@@ -108,6 +108,9 @@ const LOCATION_COORDS: Record<string, [number, number]> = {
   'indore': [22.7196, 75.8577],
   'satara': [17.6805, 74.0183],
   'ratnagiri': [16.9902, 73.3120],
+  'kashmir': [34.0837, 74.7973],
+  'srinagar': [34.0837, 74.7973],
+  'bhopal': [23.2599, 77.4126],
 };
 
 const getEstimateDistance = (origin: string, dest: string): number => {
@@ -161,11 +164,15 @@ const EngineProcessingView: React.FC<{
   const expressCost = Math.round(dist * 58);
   const expressDur = Number((dist / 65).toFixed(1));
 
+  const roadScore = (0.6 + (dist % 80) / 1000).toFixed(3);
+  const multiScore = (0.5 + (dist % 50) / 1000).toFixed(3);
+  const expressScore = (0.7 + (dist % 120) / 1000).toFixed(3);
+
   const terminalLogs = [
     { text: `--- Scoring Candidates for ${origin || 'Origin'} -> ${destination || 'Destination'} (Distance: ${dist}km) ---`, type: 'header' },
-    { text: `[Score] road: Cost=₹${roadCost} | Duration=${roadDur}h | Score=0.683`, type: 'road' },
-    { text: `[Score] multimodal: Cost=₹${multiCost} | Duration=${multiDur}h | Score=0.579`, type: 'multimodal' },
-    { text: `[Score] express: Cost=₹${expressCost} | Duration=${expressDur}h | Score=0.713`, type: 'express' },
+    { text: `[Score] road: Cost=₹${roadCost} | Duration=${roadDur}h | Score=${roadScore}`, type: 'road' },
+    { text: `[Score] multimodal: Cost=₹${multiCost} | Duration=${multiDur}h | Score=${multiScore}`, type: 'multimodal' },
+    { text: `[Score] express: Cost=₹${expressCost} | Duration=${expressDur}h | Score=${expressScore}`, type: 'express' },
     { text: `> Mathematical optimum determined. Finalizing multi-modal cold corridor assignment...`, type: 'success' }
   ];
 
@@ -177,7 +184,7 @@ const EngineProcessingView: React.FC<{
   }, []);
 
   return (
-    <div className="p-6 sm:p-8 flex flex-col items-center justify-center text-center bg-[#F8FAF7] space-y-5">
+    <div className="p-6 sm:p-8 flex flex-col items-center justify-center text-center bg-[#F8FAF7] space-y-5 flex-1 overflow-y-auto">
       {/* Route & Distance Badge - Light Theme */}
       <div className="flex flex-wrap items-center justify-center gap-2 bg-[#FFFFFF] text-[#163832] px-4 py-2 rounded-full text-xs font-mono shadow-sm border border-[#D6DCD4]">
         <span className="text-[#163832] font-bold">📍 {origin || 'Origin'}</span>
@@ -188,9 +195,22 @@ const EngineProcessingView: React.FC<{
         </span>
       </div>
 
-      {/* Spinner & Live Status Heading */}
+      {/* Advanced Animated Scanner */}
       <div className="space-y-1.5">
-        <div className="w-12 h-12 border-4 border-[#D6DCD4] border-t-[#5C7A50] border-r-[#D98E2B] rounded-full animate-spin mx-auto mb-2"></div>
+        <div className="relative w-24 h-24 mx-auto mb-4">
+        {/* Outer glowing pulse */}
+        <div className="absolute inset-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 animate-[ping_2s_ease-in-out_infinite]"></div>
+        {/* Orbit 1 */}
+        <div className="absolute inset-0 rounded-full border-t-2 border-l-2 border-[#5C7A50] opacity-80 animate-[spin_3s_linear_infinite]"></div>
+        {/* Orbit 2 (reverse) */}
+        <div className="absolute inset-1.5 rounded-full border-b-2 border-r-2 border-[#D98E2B] opacity-70 animate-[spin_2s_linear_infinite_reverse]"></div>
+        {/* Orbit 3 */}
+        <div className="absolute inset-3 rounded-full border-t-2 border-r-2 border-emerald-300 opacity-90 animate-[spin_1.5s_linear_infinite]"></div>
+        {/* Core */}
+        <div className="absolute inset-5 bg-gradient-to-tr from-[#163832] to-[#5C7A50] rounded-full shadow-[0_0_15px_rgba(92,122,80,0.5)] flex items-center justify-center">
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-[0_0_10px_white]"></div>
+        </div>
+      </div>
         <h3 className="text-xl font-bold font-display text-[#163832]">
           Karwaan AI Optimization Engine
         </h3>
@@ -706,9 +726,9 @@ const confirmAiPlan = async (planId: string) => {
                           <tr
                             key={shipment.id}
                             onClick={() => handleSelectShipment(shipment)}
-                            className={`cursor-pointer transition-all border-l-4 ${isSelected ? 'bg-[#F8FAF7] border-[#5C7A50] shadow-inner' : 'hover:bg-gray-50 border-transparent'}`}
+                            className={`cursor-pointer transition-all ${isSelected ? 'bg-green-50/50 shadow-sm' : 'hover:bg-gray-50/70 border-b border-[#F3F5F2] last:border-b-0'}`}
                           >
-                            <td className="py-4 px-5">
+                            <td className={`py-4 px-5 ${isSelected ? 'rounded-l-xl' : ''}`}>
                               <div className="font-mono font-bold text-[#163832]">{shipment.code}</div>
                               <div className="text-xs text-[#596560] font-medium mt-0.5">{shipment.cargoType} &bull; {shipment.weightKg}kg</div>
                             </td>
@@ -722,6 +742,7 @@ const confirmAiPlan = async (planId: string) => {
                               {/* THE FIX: whitespace-nowrap prevents the awkward badge splitting */}
                               <span className={`whitespace-nowrap px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider ${
                                 shipment.status === 'in_transit' ? 'bg-[#5C7A50]/10 text-[#5C7A50] border border-[#5C7A50]/20' : 
+                                shipment.status === 'pending' ? 'bg-[#D98E2B]/10 text-[#D98E2B] border border-[#D98E2B]/20' :
                                 shipment.status === 'disrupted' ? 'bg-red-50 text-red-700 border border-red-200' : 
                                 shipment.status === 'delivered' ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-[#D98E2B]/10 text-[#D98E2B] border border-[#D98E2B]/20'
                               }`}>
@@ -750,7 +771,12 @@ const confirmAiPlan = async (planId: string) => {
                             <div className="font-mono font-bold text-[#163832]">{shipment.code}</div>
                             <div className="text-xs text-[#596560] font-medium mt-0.5">{shipment.cargoType}</div>
                           </div>
-                          <span className={`whitespace-nowrap px-2 py-1 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${shipment.status === 'in_transit' ? 'bg-[#5C7A50]/10 text-[#5C7A50]' : shipment.status === 'disrupted' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                          <span className={`whitespace-nowrap px-2.5 py-1 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
+                            shipment.status === 'in_transit' ? 'bg-[#5C7A50]/10 text-[#5C7A50] border border-[#5C7A50]/20' : 
+                            shipment.status === 'pending' ? 'bg-[#D98E2B]/10 text-[#D98E2B] border border-[#D98E2B]/20' :
+                            shipment.status === 'disrupted' ? 'bg-red-50 text-red-700 border border-red-200' : 
+                            shipment.status === 'delivered' ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-[#D98E2B]/10 text-[#D98E2B] border border-[#D98E2B]/20'
+                          }`}>
                             {shipment.status.replace('_', ' ')}
                           </span>
                         </div>
@@ -1222,10 +1248,18 @@ const confirmAiPlan = async (planId: string) => {
                       <button 
                         onClick={handleRecalculatePlan}
                         disabled={isRecalculating}
-                        className="w-full px-4 py-2.5 bg-[#596560] hover:bg-[#1A211E] disabled:bg-gray-300 text-white rounded-lg font-bold shadow transition-colors flex items-center justify-center gap-2"
+                        className={`w-full px-4 py-2.5 rounded-lg font-bold shadow transition-all flex items-center justify-center gap-2 overflow-hidden relative ${
+                          isRecalculating 
+                            ? 'bg-gradient-to-r from-[#163832] via-[#2D6A4F] to-[#163832] bg-[length:200%_100%] animate-[pulse_1.5s_ease-in-out_infinite] cursor-wait text-emerald-100 shadow-[0_0_15px_rgba(45,106,79,0.4)] border border-emerald-500/30' 
+                            : 'bg-[#596560] hover:bg-[#1A211E] text-white'
+                        }`}
                       >
                         {isRecalculating ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <>
+                            <div className="w-4 h-4 border-2 border-emerald-300/30 border-t-emerald-300 rounded-full animate-spin relative z-10"></div>
+                            <span className="relative z-10 font-mono tracking-wide text-xs uppercase">Simulating</span>
+                            <div className="absolute inset-0 bg-white/5 opacity-50 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.1)_10px,rgba(255,255,255,0.1)_20px)]"></div>
+                          </>
                         ) : (
                           <><Layers className="w-4 h-4" /> Recalculate</>
                         )}

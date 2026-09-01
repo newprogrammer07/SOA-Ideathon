@@ -67,6 +67,7 @@ export const shipments = pgTable('shipments', {
   slaMaxDeliveryHours: integer('sla_max_delivery_hours'),
   slaMaxSpoilagePercent: real('sla_max_spoilage_percent'),
   slaPriority: varchar('sla_priority', { length: 50 }),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

@@ -24,6 +24,7 @@ export type PerishableCategory =
   | 'citrus';
 
 export type ShipmentStatus =
+  | 'pending'
   | 'pending_consolidation'
   | 'consolidated'
   | 'in_transit'

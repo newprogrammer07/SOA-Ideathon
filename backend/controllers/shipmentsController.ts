@@ -59,7 +59,7 @@ export const getShipments = async (req: Request, res: Response, next: NextFuncti
         humidityPercent: SEED_DEFAULT_HUMIDITY_PERCENT,
         dispatchTime: shipment.createdAt,
         deliveryDeadline: new Date(new Date(shipment.createdAt).getTime() + (shipment.slaMaxDeliveryHours || 48) * 3600000).toISOString(),
-        status: 'in_transit',
+        status: shipment.status,
         estimatedSoloCostINR: economics.estimatedSoloCostINR,
         consolidatedCostINR: economics.consolidatedCostINR,
         costSavingsPercent: economics.costSavingsPercent,
@@ -126,7 +126,7 @@ export const getShipmentById = async (req: Request, res: Response, next: NextFun
       humidityPercent: SEED_DEFAULT_HUMIDITY_PERCENT,
       dispatchTime: shipment.createdAt,
       deliveryDeadline: new Date(new Date(shipment.createdAt).getTime() + (shipment.slaMaxDeliveryHours || 48) * 3600000).toISOString(),
-      status: 'in_transit',
+      status: shipment.status,
       estimatedSoloCostINR: economics.estimatedSoloCostINR,
       consolidatedCostINR: economics.consolidatedCostINR,
       costSavingsPercent: economics.costSavingsPercent,
@@ -216,6 +216,9 @@ export const createShipment = async (req: Request, res: Response, next: NextFunc
       destination: resolvedDestination
     });
 
+    const weight = Number(weightKg) || SEED_DEFAULT_WEIGHT_KG;
+    const economics = calculateShipmentEconomics(weight, [resolvedOrigin.lat, resolvedOrigin.lng], [resolvedDestination.lat, resolvedDestination.lng]);
+
     const formatted = {
       ...shipment,
       code: shipment.id,
@@ -229,11 +232,12 @@ export const createShipment = async (req: Request, res: Response, next: NextFunc
       humidityPercent: SEED_DEFAULT_HUMIDITY_PERCENT,
       dispatchTime: shipment.createdAt,
       deliveryDeadline: deliveryDeadline || new Date(new Date(shipment.createdAt).getTime() + (shipment.slaMaxDeliveryHours || 48) * 3600000).toISOString(),
-      status: 'in_transit',
-      estimatedSoloCostINR: SEED_DEFAULT_ESTIMATED_SOLO_COST_INR,
-      consolidatedCostINR: SEED_DEFAULT_CONSOLIDATED_COST_INR,
-      costSavingsPercent: SEED_DEFAULT_COST_SAVINGS_PERCENT,
-      co2SavedKg: SEED_DEFAULT_CO2_SAVED_KG,
+      status: shipment.status,
+      estimatedSoloCostINR: economics.estimatedSoloCostINR,
+      consolidatedCostINR: economics.consolidatedCostINR,
+      costSavingsPercent: economics.costSavingsPercent,
+      co2SavedKg: economics.co2SavedKg,
+      consolidationReason: economics.consolidationReason,
       temperatureHistory: [],
       slaConstraint: {
         maxDeliveryHours: shipment.slaMaxDeliveryHours,
@@ -264,7 +268,7 @@ export const updateShipment = async (req: Request, res: Response, next: NextFunc
     const {
       cargoType, targetTempMin, targetTempMax, totalShelfLifeHours,
       weightKg, volumeCbm, slaMaxDeliveryHours, slaMaxSpoilagePercent, slaPriority,
-      origin, destination
+      origin, destination, status
     } = req.body;
 
     const updates: any = {};
@@ -287,6 +291,7 @@ export const updateShipment = async (req: Request, res: Response, next: NextFunc
     if (origin !== undefined) updates.origin = origin;
     if (destination !== undefined) updates.destination = destination;
     if (totalShelfLifeHours !== undefined) updates.totalShelfLifeHours = Number(totalShelfLifeHours);
+    if (status !== undefined) updates.status = status;
     if (slaMaxDeliveryHours !== undefined) updates.slaMaxDeliveryHours = Number(slaMaxDeliveryHours);
     if (slaMaxSpoilagePercent !== undefined) updates.slaMaxSpoilagePercent = Number(slaMaxSpoilagePercent);
     if (slaPriority !== undefined) updates.slaPriority = slaPriority;

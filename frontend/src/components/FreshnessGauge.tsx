@@ -55,7 +55,7 @@ export const FreshnessGauge: React.FC<FreshnessGaugeProps> = ({
   // Dimension settings
   const config = {
     mini: { dimension: 28, strokeWidth: 3.5, radius: 10, fontSize: 'text-[9px]' },
-    sm: { dimension: 40, strokeWidth: 4.5, radius: 14, fontSize: 'text-[11px]' },
+    sm: { dimension: 48, strokeWidth: 4, radius: 18, fontSize: 'text-[11px]' },
     md: { dimension: 64, strokeWidth: 6, radius: 24, fontSize: 'text-sm' },
     lg: { dimension: 96, strokeWidth: 8, radius: 36, fontSize: 'text-xl' },
   }[size];
